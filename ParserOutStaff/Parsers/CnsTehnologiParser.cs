@@ -3,6 +3,11 @@ using AngleSharp;
 using ParserOutStaff.ParserTools;
 using ParserOutStaff.ProductData;
 using AngleSharp.Text;
+using ParserOutStaff.Models.ProductSearch;
+using static ParserOutStaff.Models.ProductSearch.ProductSearchAnswer;
+using static System.Runtime.InteropServices.JavaScript.JSType;
+using ParserOutStaff.Models;
+using ParserOutStaff.Models.DetailSearch;
 
 namespace ParserOutStaff.Parsers
 {
@@ -57,7 +62,7 @@ namespace ParserOutStaff.Parsers
             var document = await GetDocument(productUrl);
             product.Price = decimal.Parse(document.QuerySelector("span#block_price").GetAttribute("data-price"));
             product.Link = productUrl;
-            product.CatalogPath = String.Join("->", document.QuerySelector("ul.breadcrumb").TextContent.Trim().Split(new char[] { '\t', '\n' }, StringSplitOptions.RemoveEmptyEntries));
+            product.CatalogPath = string.Join("->", document.QuerySelector("ul.breadcrumb").TextContent.Trim().Split(new char[] { '\t', '\n' }, StringSplitOptions.RemoveEmptyEntries));
             product.Code = document.GetElementById("product_id")?.GetAttribute("value");
             product.Name = document.QuerySelector("h1").InnerHtml;
             var chardf = document.QuerySelectorAll("tbody").First().QuerySelectorAll("tr");
@@ -94,7 +99,7 @@ namespace ParserOutStaff.Parsers
             }
         }
 
-        public async Task<List<Product>> Parse(string phrase)
+        public async Task<ProductSearchAnswer> Parse(ProductSearchRequest requestedData)
         {
             var products = new List<Product>();
             var productPages = await FindProductsUrl();
@@ -103,15 +108,29 @@ namespace ParserOutStaff.Parsers
                var product = await GetProductsAsync(page);
                 products.Add(product);
             }
-            return products.Where(x=>x.Name.ToLower().Contains(phrase.ToLower())).ToList();
+            Variant variant = new Variant
+            {
+                phrase = requestedData.SearchPhraseList[0],
+                products = products.Where(x => x.Name.ToLower().Contains(requestedData.SearchPhraseList[0].ToLower())).ToList()
+            };
+            ProductSearchAnswer answer = new ProductSearchAnswer
+            {
+                App = requestedData.App,
+                variants = new List<Variant> { variant }
+            };
+            return answer;
         }
 
-        public async Task<DetailParametersProduct> ParseWithDetails(string link)
+        public async Task<ProductDataSearchAnswer> ParseWithDetails(DetailSearchParams requestedDetailedData)
         {
-            var productWithoutDetails=await GetProductsAsync(link);
-            var details = await AddDetails(productWithoutDetails, link);
-            
-            return details;
+            var productWithoutDetails=await GetProductsAsync(requestedDetailedData.ProductLinks[0]);
+            var productWithDetails = await AddDetails(productWithoutDetails, requestedDetailedData.ProductLinks[0]);
+            ProductDataSearchAnswer productDataSearchAnswer = new ProductDataSearchAnswer()
+            {
+                App = requestedDetailedData.App,
+                Products = new List<ProductData.DetailParametersProduct> { productWithDetails }
+            };
+            return productDataSearchAnswer;
         }
     }
 }

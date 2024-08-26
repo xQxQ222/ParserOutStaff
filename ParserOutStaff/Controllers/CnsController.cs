@@ -20,41 +20,25 @@ namespace ParserOutStaff.Controllers
         }
 
         [HttpPost("CnsTehnologi/GetProducts")]
-        public async Task<ActionResult<string>> GetPurchasesFromCns([FromBody] ProductSearchRequest data)
+        public async Task<ActionResult<string>> GetPurchasesFromCns([FromBody] ProductSearchRequest requestedData)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var phrase = data.SearchPhraseList[0].ToLower();
+            var parsedItems = await _parser.Parse(requestedData);
 
-            var productsList = await _parser.Parse(phrase);
-
-            Variant variant = new Variant
-            {
-                phrase = phrase,
-                products = productsList
-            };
-            ProductSearchAnswer products = new ProductSearchAnswer
-            {
-                App = data.App,
-                variants = new List<Variant> { variant }
-            };
-
-            return Ok(JsonConvert.SerializeObject(products));
+            return Ok(JsonConvert.SerializeObject(parsedItems));
         }
 
         [HttpPost("CnsTehnologi/GetProductsData")]
-        public async Task<ActionResult<string>> GetPurchasesDetailsFromCns([FromBody] DetailSearchParams data)
+        public async Task<ActionResult<string>> GetPurchasesDetailsFromCns([FromBody] DetailSearchParams requestedDetailedData)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
-            var link = data.ProductLinks[0];
-            var productWithDetails= await _parser.ParseWithDetails(link);
+            var detailedProductAnswer= await _parser.ParseWithDetails(requestedDetailedData);
             
-            ProductDataSearchAnswer productDataSearchAnswer=new ProductDataSearchAnswer();
-            productDataSearchAnswer.App = data.App;
-            productDataSearchAnswer.Products=new List<ProductData.DetailParametersProduct> { productWithDetails };
-            return Ok(JsonConvert.SerializeObject(productDataSearchAnswer));
+            
+            return Ok(JsonConvert.SerializeObject(detailedProductAnswer));
         }
     }
 }

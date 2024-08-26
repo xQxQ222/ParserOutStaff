@@ -1,10 +1,10 @@
 ﻿namespace ParserOutStaff.ParserTools
 {
-    public class CnsTehRequester:IHtmlRequester
+    public class CnsTehnologiHtmlReader:IHtmlRequester
     {
         private readonly IHttpClientFactory _httpClientFactory;
 
-        public CnsTehRequester(IHttpClientFactory clientFactory)
+        public CnsTehnologiHtmlReader(IHttpClientFactory clientFactory)
         {
             this._httpClientFactory = clientFactory;
         }
